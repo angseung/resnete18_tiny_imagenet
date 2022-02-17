@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import datetime
 import argparse
@@ -8,6 +8,7 @@ import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import tensorflow as tf
 import larq as lq
+import larq_zoo
 from tensorflow.python.keras.callbacks import TensorBoard
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.image import resize
@@ -19,6 +20,7 @@ parser = argparse.ArgumentParser(description='resnet model')
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--input_size", type=int, default=64)
 parser.add_argument("--method", type=str, default="bilinear")
+parser.add_argument("--tune", type=bool, default=False)
 args = parser.parse_args()
 assert args.method in ["bilinear", "nearest", "bicubic"]
 assert args.input_size in [16, 32, 64]
@@ -28,7 +30,17 @@ base_dir = "C:/tiny-imagenet-200"
 target_dir = "./data"
 test_name = "resnet_e18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 num_classes = 200
-model = resnet_e18(input_shape=(input_size, input_size, 3), num_classes=num_classes)
+
+if args.tune:
+    model = larq_zoo.literature.BinaryResNetE18(
+        input_shape=(input_size, input_size, 3),
+        input_tensor=None,
+        weights="imagenet",
+        include_top=False,
+        num_classes=num_classes,
+    )
+else:
+    model = resnet_e18(input_shape=(input_size, input_size, 3), num_classes=num_classes)
 
 # Data Load TinyImageNet
 (train_images, train_labels), (test_images, test_labels) = TinyImageNet(
@@ -91,7 +103,7 @@ mcp_save = ModelCheckpoint(
 )
 
 model.compile(
-    tf.keras.optimizers.Adam(lr=learning_rate, decay=0.0001),
+    tf.keras.optimizers.Adam(learning_rate=learning_rate, decay=0.0001),
     # tf.keras.optimizers.RMSprop(lr=learning_rate),
     loss="categorical_crossentropy",
     metrics=["accuracy", top5_acc],
