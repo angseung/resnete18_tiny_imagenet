@@ -17,7 +17,7 @@ class TinyImagenet():
     def load_data(self) -> Tuple[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]:
         if not self.is_npz_made:
             print("File not exists, generating TinyImage dataset...")
-            (train_images, train_labels), (test_images, test_labels) = get_data(get_id_dictionary(self.base_dir))
+            (train_images, train_labels), (test_images, test_labels) = get_data(self.base_dir, get_id_dictionary(self.base_dir))
 
             np.save(self.target_dir + "/train_images.npy", train_images)
             np.save(self.target_dir + "/train_labels.npy", train_labels)
@@ -38,11 +38,11 @@ def get_id_dictionary(path):
     id_dict = {}
     for i, line in enumerate(open(path + '/wnids.txt', 'r')):
         id_dict[line.replace('\n', '')] = i
-    return id_dict
+    return path, id_dict
 
 
 def get_class_to_id_dict():
-    id_dict = get_id_dictionary()
+    path, id_dict = get_id_dictionary()
     all_classes = {}
     result = {}
     for i, line in enumerate(open(path + '/words.txt', 'r')):
@@ -53,7 +53,8 @@ def get_class_to_id_dict():
     return result
 
 
-def get_data(id_dict):
+def get_data(path, id_dict):
+    id_dict = id_dict[1]
     print('starting loading data')
     train_data, test_data = [], []
     train_labels, test_labels = [], []

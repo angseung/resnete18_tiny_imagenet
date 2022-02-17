@@ -1,5 +1,7 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import datetime
 import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import tensorflow as tf
@@ -13,7 +15,7 @@ from utils import TinyImagenet
 
 base_dir = "C:/tiny-imagenet-200"
 target_dir = "./data"
-test_name = 'resnet_e18'
+test_name = 'resnet_e18_%s' % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 num_classes = 200
 model = resnet_e18(input_shape=(64, 64, 3), num_classes=num_classes)
 
@@ -40,9 +42,10 @@ datagen = ImageDataGenerator(
 )
 
 datagen.fit(train_images)
+log_dir = "log_%s"
 
 lq.models.summary(model)
-tb = TensorBoard(log_dir='results/{}/log'.format(test_name))
+tb = tf.keras.callbacks.TensorBoard(log_dir='results/{}/log'.format(test_name), histogram_freq=1)
 
 learning_rate = 1e-3
 learning_factor = 0.3
@@ -59,7 +62,7 @@ def learning_rate_schedule(epoch):
 
 
 lrcb = tf.keras.callbacks.LearningRateScheduler(learning_rate_schedule)
-mcp_save = ModelCheckpoint('results/{}/cifar10.h5'.format(test_name), save_best_only=True, monitor='val_accuracy',
+mcp_save = ModelCheckpoint('results/{}/tinyimagenet.h5'.format(test_name), save_best_only=True, monitor='val_accuracy',
                            mode='max')
 
 model.compile(
@@ -71,13 +74,13 @@ model.compile(
 
 trained_model = model.fit(
     datagen.flow(train_images, train_labels, batch_size=64),
-    epochs=120,
+    epochs=200,
     validation_data=(test_images, test_labels),
     shuffle=True,
     callbacks=[tb, mcp_save, lrcb]
 )
 
-model.load_weights('results/{}/cifar10.h5'.format(test_name))
+model.load_weights('results/{}/tinyimagenet.h5'.format(test_name))
 
 # Model Evaluate!
 test_loss, test_acc = model.evaluate(test_images, test_labels)
