@@ -98,12 +98,13 @@ spec = ([2, 2, 2, 2], [64, 128, 256, 512])
 def resnet_b18_v0(input_shape, num_classes, weight_path=None):
     x = tf.keras.Input(shape=input_shape)
     #
-    y = tf.keras.layers.QuantConv2D(64,
-                                    kernel_size=3,
-                                    padding="same",
-                                    kernel_initializer="he_normal",
-                                    use_bias=False,
-                                    )(x)
+    y = tf.keras.layers.QuantConv2D(
+        64,
+        kernel_size=3,
+        padding="same",
+        kernel_initializer="he_normal",
+        use_bias=False,
+    )(x)
 
     y = tf.keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5)(y)
     y = tf.keras.layers.Activation("relu")(y)
@@ -117,10 +118,9 @@ def resnet_b18_v0(input_shape, num_classes, weight_path=None):
 
     y = tf.keras.layers.Activation("relu")(y)
     y = tf.keras.layers.GlobalAvgPool2D()(y)
-    y = lq.layers.QuantDense(num_classes,
-                             kernel_initializer="glorot_normal",
-                             use_bias=False
-                             )(y)
+    y = lq.layers.QuantDense(
+        num_classes, kernel_initializer="glorot_normal", use_bias=False
+    )(y)
     y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
 
     model = tf.keras.Model(
@@ -135,15 +135,16 @@ def resnet_b18_v0(input_shape, num_classes, weight_path=None):
 
 
 def resnet_b18_v1(input_shape, num_classes, weight_path=None):
-    ''' remove maxpool and batchnorm and bn after 1st qconv epsilon 1e-3'''
+    """remove maxpool and batchnorm and bn after 1st qconv epsilon 1e-3"""
     x = tf.keras.Input(shape=input_shape)
     #
-    y = tf.keras.layers.QuantConv2D(64,
-                                    kernel_size=3,
-                                    padding="same",
-                                    kernel_initializer="he_normal",
-                                    use_bias=False,
-                                    )(x)
+    y = tf.keras.layers.QuantConv2D(
+        64,
+        kernel_size=3,
+        padding="same",
+        kernel_initializer="he_normal",
+        use_bias=False,
+    )(x)
 
     y = tf.keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-3)(y)
     y = tf.keras.layers.Activation("relu")(y)
@@ -155,10 +156,9 @@ def resnet_b18_v1(input_shape, num_classes, weight_path=None):
 
     y = tf.keras.layers.Activation("relu")(y)
     y = tf.keras.layers.GlobalAvgPool2D()(y)
-    y = lq.layers.QuantDense(num_classes,
-                             kernel_initializer="glorot_normal",
-                             use_bias=True
-                             )(y)
+    y = lq.layers.QuantDense(
+        num_classes, kernel_initializer="glorot_normal", use_bias=True
+    )(y)
     y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
 
     model = tf.keras.Model(
@@ -171,16 +171,18 @@ def resnet_b18_v1(input_shape, num_classes, weight_path=None):
 
     return model
 
+
 def resnet_b18_v2(input_shape, num_classes, weight_path=None):
-    ''' 2 shortcut'''
+    """2 shortcut"""
     x = tf.keras.Input(shape=input_shape)
     #
-    y = lq.layers.QuantConv2D(64,
-                              kernel_size=3,
-                              padding="same",
-                              kernel_initializer="he_normal",
-                              use_bias=False,
-                              )(x)
+    y = lq.layers.QuantConv2D(
+        64,
+        kernel_size=3,
+        padding="same",
+        kernel_initializer="he_normal",
+        use_bias=False,
+    )(x)
 
     y = tf.keras.layers.Activation("relu")(y)
     y = tf.keras.layers.BatchNormalization(momentum=0.99, epsilon=1e-3)(y)
@@ -193,9 +195,7 @@ def resnet_b18_v2(input_shape, num_classes, weight_path=None):
     y = tf.keras.layers.Activation("relu")(y)
     y = tf.keras.layers.GlobalAvgPool2D()(y)
     y = lq.layers.QuantDense(
-        num_classes,
-        kernel_initializer="glorot_normal",
-        use_bias=False
+        num_classes, kernel_initializer="glorot_normal", use_bias=False
     )(y)
     y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
 

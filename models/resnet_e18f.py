@@ -63,12 +63,13 @@ spec = ([2, 2, 2, 2], [64, 128, 256, 512])
 def vgg_e18(input_shape, num_classes, weight_path=None):
     x = tf.keras.Input(shape=input_shape)
 
-    y = tf.keras.layers.Conv2D(64,
-                               kernel_size=3,
-                               padding="same",
-                               kernel_initializer="he_normal",
-                               use_bias=False,
-                               )(x)
+    y = tf.keras.layers.Conv2D(
+        64,
+        kernel_size=3,
+        padding="same",
+        kernel_initializer="he_normal",
+        use_bias=False,
+    )(x)
 
     y = tf.keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5)(y)
     y = tf.keras.layers.Activation("relu")(y)
@@ -82,9 +83,7 @@ def vgg_e18(input_shape, num_classes, weight_path=None):
 
     y = tf.keras.layers.Activation("relu")(y)
     y = tf.keras.layers.GlobalAvgPool2D()(y)
-    y = tf.keras.layers.Dense(
-        num_classes, kernel_initializer="glorot_normal"
-    )(y)
+    y = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(y)
     y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
 
     model = tf.keras.Model(
@@ -101,12 +100,13 @@ def vgg_e18(input_shape, num_classes, weight_path=None):
 def resnet_e18(input_shape, num_classes, weight_path=None):
     x = tf.keras.Input(shape=input_shape)
     #
-    y = tf.keras.layers.Conv2D(64,
-                               kernel_size=3,
-                               padding="same",
-                               kernel_initializer="he_normal",
-                               use_bias=False,
-                               )(x)
+    y = tf.keras.layers.Conv2D(
+        64,
+        kernel_size=3,
+        padding="same",
+        kernel_initializer="he_normal",
+        use_bias=False,
+    )(x)
 
     y = tf.keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5)(y)
     y = tf.keras.layers.Activation("relu")(y)
@@ -120,9 +120,7 @@ def resnet_e18(input_shape, num_classes, weight_path=None):
 
     y = tf.keras.layers.Activation("relu")(y)
     y = tf.keras.layers.GlobalAvgPool2D()(y)
-    y = tf.keras.layers.Dense(
-        num_classes, kernel_initializer="glorot_normal"
-    )(y)
+    y = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(y)
     y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
 
     model = tf.keras.Model(

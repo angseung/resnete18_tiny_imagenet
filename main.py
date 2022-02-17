@@ -1,7 +1,9 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import datetime
+import argparse
 import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import tensorflow as tf
@@ -11,16 +13,32 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.image import resize
 from models.resnet_e18f import resnet_e18, vgg_e18
 import tensorflow_datasets as tfds
-from utils import TinyImagenet
+from utils import TinyImageNet
 
+parser = argparse.ArgumentParser(description='resnet model')
+parser.add_argument("--lr", type=float, default=0.001)
+parser.add_argument("--input_size", type=int, default=64)
+parser.add_argument("--method", type=str, default="bilinear")
+args = parser.parse_args()
+assert args.method in ["bilinear", "nearest", "bicubic"]
+assert args.input_size in [16, 32, 64]
+
+input_size = args.input_size
 base_dir = "C:/tiny-imagenet-200"
 target_dir = "./data"
-test_name = 'resnet_e18_%s' % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+test_name = "resnet_e18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 num_classes = 200
-model = resnet_e18(input_shape=(64, 64, 3), num_classes=num_classes)
+model = resnet_e18(input_shape=(input_size, input_size, 3), num_classes=num_classes)
 
-# Data Load Cifar10
-(train_images, train_labels), (test_images, test_labels) = TinyImagenet(base_dir, target_dir).load_data()
+# Data Load TinyImageNet
+(train_images, train_labels), (test_images, test_labels) = TinyImageNet(
+    base_dir, target_dir
+).load_data()
+
+if args.input_size != 64:
+    train_images = tf.image.resize(tf.convert_to_tensor(train_images), size=[args.input_size, args.input_size], method=args.method)
+    test_images = tf.image.resize(tf.convert_to_tensor(test_images), size=[args.input_size, args.input_size], method=args.method)
+
 
 # train_images = train_images.reshape((50000, 32, 32, 3)).astype("float32")
 # test_images = test_images.reshape((10000, 32, 32, 3)).astype("float32")
@@ -45,9 +63,11 @@ datagen.fit(train_images)
 log_dir = "log_%s"
 
 lq.models.summary(model)
-tb = tf.keras.callbacks.TensorBoard(log_dir='results/{}/log'.format(test_name), histogram_freq=1)
+tb = tf.keras.callbacks.TensorBoard(
+    log_dir="results/{}/log".format(test_name), histogram_freq=1
+)
 
-learning_rate = 1e-3
+learning_rate = args.lr
 learning_factor = 0.3
 learning_steps = [40, 80, 100]
 
@@ -62,14 +82,19 @@ def learning_rate_schedule(epoch):
 
 
 lrcb = tf.keras.callbacks.LearningRateScheduler(learning_rate_schedule)
-mcp_save = ModelCheckpoint('results/{}/tinyimagenet.h5'.format(test_name), save_best_only=True, monitor='val_accuracy',
-                           mode='max')
+top5_acc = tf.keras.metrics.TopKCategoricalAccuracy(k=5, name="top5_acc")
+mcp_save = ModelCheckpoint(
+    "results/{}/tinyimagenet.h5".format(test_name),
+    save_best_only=True,
+    monitor="val_accuracy",
+    mode="max",
+)
 
 model.compile(
     tf.keras.optimizers.Adam(lr=learning_rate, decay=0.0001),
     # tf.keras.optimizers.RMSprop(lr=learning_rate),
     loss="categorical_crossentropy",
-    metrics=["accuracy"],
+    metrics=["accuracy", top5_acc],
 )
 
 trained_model = model.fit(
@@ -77,10 +102,10 @@ trained_model = model.fit(
     epochs=200,
     validation_data=(test_images, test_labels),
     shuffle=True,
-    callbacks=[tb, mcp_save, lrcb]
+    callbacks=[tb, mcp_save, lrcb],
 )
 
-model.load_weights('results/{}/tinyimagenet.h5'.format(test_name))
+model.load_weights("results/{}/tinyimagenet.h5".format(test_name))
 
 # Model Evaluate!
 test_loss, test_acc = model.evaluate(test_images, test_labels)
