@@ -39,6 +39,15 @@ if args.tune:
         include_top=False,
         num_classes=num_classes,
     )
+    model = tf.keras.Sequential([
+        tf.keras.layers.InputLayer(input_shape=(input_size, input_size, 3)),
+        tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), stride=(1, 1), padding="same", use_bias=False,),
+        model.layers[2:],
+        tf.keras.layers.GlobalAvgPool2D(),
+        tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal"),
+        tf.keras.layers.Activation("softmax", dtype="float32"),
+    ])
+
 else:
     model = resnet_e18(input_shape=(input_size, input_size, 3), num_classes=num_classes)
 
