@@ -14,7 +14,8 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.image import resize
 from models.resnet_e18f import resnet_e18, vgg_e18
 import tensorflow_datasets as tfds
-from utils import TinyImageNet
+from utils import TinyImageNet, replace_intermediate_layer
+from classification_models.keras import Classifiers
 
 parser = argparse.ArgumentParser(description='resnet model')
 parser.add_argument("--lr", type=float, default=0.001)
@@ -28,28 +29,33 @@ assert args.input_size in [16, 32, 64]
 input_size = args.input_size
 base_dir = "C:/tiny-imagenet-200"
 target_dir = "./data"
-test_name = "resnet_e18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+test_name = "resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 num_classes = 200
 
+ResNet18, preprocess_input = Classifiers.get('resnet18')
+model = ResNet18(input_shape=(input_size, input_size, 3), weights='imagenet', include_top=False)
+
 if args.tune:
-    model = larq_zoo.literature.BinaryResNetE18(
-        input_shape=(input_size, input_size, 3),
-        input_tensor=None,
-        weights="imagenet",
-        include_top=False,
-        num_classes=num_classes,
-    )
-    model = tf.keras.Sequential([
-        tf.keras.layers.InputLayer(input_shape=(input_size, input_size, 3)),
-        tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), stride=(1, 1), padding="same", use_bias=False,),
-        model.layers[2:],
-        tf.keras.layers.GlobalAvgPool2D(),
-        tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal"),
-        tf.keras.layers.Activation("softmax", dtype="float32"),
-    ])
+    conv_to_replace = tf.keras.layers.Conv2D(64, 3, strides=(1, 1))
+    pool_to_replace = tf.keras.activations.linear
+    model = replace_intermediate_layer(model, 3, conv_to_replace)
+    model = replace_intermediate_layer(model, 7, pool_to_replace)
+    ## replace conv7x7[3] -> conv3x3, maxpool[7]->sequential
+    input = tf.keras.Input(shape=(input_size, input_size, 3))
+    y = model(input)
+    y = tf.keras.layers.GlobalAvgPool2D()(y)
+    y = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(y)
+    y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
+    model = tf.keras.Model(input, y)
 
 else:
-    model = resnet_e18(input_shape=(input_size, input_size, 3), num_classes=num_classes)
+    input = tf.keras.Input(shape=(input_size, input_size, 3))
+    y = model(input)
+    y = tf.keras.layers.GlobalAvgPool2D()(y)
+    y = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(y)
+    y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
+    # model = tf.keras.Model(input, y)
+    model = keras.models.Model(inputs=[model.input], outputs=[output])
 
 # Data Load TinyImageNet
 (train_images, train_labels), (test_images, test_labels) = TinyImageNet(
@@ -60,7 +66,8 @@ if args.input_size != 64:
     train_images = tf.image.resize(tf.convert_to_tensor(train_images), size=[args.input_size, args.input_size], method=args.method)
     test_images = tf.image.resize(tf.convert_to_tensor(test_images), size=[args.input_size, args.input_size], method=args.method)
 
-
+# train_images = preprocess_input(train_images)
+# test_images = preprocess_input(test_images)
 # train_images = train_images.reshape((50000, 32, 32, 3)).astype("float32")
 # test_images = test_images.reshape((10000, 32, 32, 3)).astype("float32")
 
@@ -112,8 +119,8 @@ mcp_save = ModelCheckpoint(
 )
 
 model.compile(
-    tf.keras.optimizers.Adam(learning_rate=learning_rate, decay=0.0001),
-    # tf.keras.optimizers.RMSprop(lr=learning_rate),
+    # tf.keras.optimizers.Adam(learning_rate=learning_rate, decay=0.0001),
+    tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.9),
     loss="categorical_crossentropy",
     metrics=["accuracy", top5_acc],
 )

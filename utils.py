@@ -105,6 +105,39 @@ def get_data(path, id_dict):
     )
 
 
+def replace_intermediate_layer(model, layer_id, new_layer):
+    from keras.models import Model
+
+    layers = [l for l in model.layers]
+
+    x = layers[0].output
+    for i in range(1, len(layers)):
+        if i == layer_id:
+            x = new_layer(x)
+        else:
+            x = layers[i](x)
+
+    new_model = Model(input=layers[0].input, output=x)
+    return new_model
+
+
+def replace_intermediate_layer_resnet18(model, layer_id, new_layer):
+    from keras.models import Model
+
+    layers = [l for l in model.layers]
+
+    x = layers[0].output
+    for i in range(1, len(layers)):
+        if i == layer_id:
+            x = new_layer(x)
+        elif i == 17:
+
+            x = layers[i](x)
+
+    new_model = Model(input=layers[0].input, output=x)
+    return new_model
+
+
 if __name__ == "__main__":
 
     train_data, train_labels, test_data, test_labels = get_data(get_id_dictionary())
