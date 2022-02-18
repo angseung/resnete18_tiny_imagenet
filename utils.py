@@ -127,14 +127,79 @@ def replace_intermediate_layer_resnet18(model, layer_id, new_layer):
     layers = [l for l in model.layers]
 
     x = layers[0].output
-    for i in range(1, len(layers)):
-        if i == layer_id:
+    for i in range(len(layers)):
+        if i == 0:
+            continue
+        elif i == layer_id:
             x = new_layer(x)
-        elif i == 17:
-
+        elif i in [9, 28, 47, 66]:
+            x_conv = layers[i](x)
+            x = layers[i](x)
+        elif i in [15]:
+            x_0 = layers[i](x)
+            x = layers[i](x)
+        elif i in [16]:
+            x_1 = layers[i](x_conv)
+            x = layers[i](x_conv)
+        elif i in [17]:
+            x = layers[i]([x_0, x_1])
+            x_0 = layers[i]([x_0, x_1])
+        elif i == 25:
+            x_1 = layers[i](x)
+            x = layers[i](x)
+        elif i == 26:
+            x = layers[i]([x_0, x_1])
+            x_0 = layers[i]([x_0, x_1])
+        elif i == 34:
+            x_0 = layers[i](x)
+            x = layers[i](x)
+        elif i == 35:
+            x_1 = layers[i](x_conv)
+            x = layers[i](x_conv)
+        elif i == 36:
+            x = layers[i]([x_0, x_1])
+            x_0 = layers[i]([x_0, x_1])
+        elif i == 44:
+            x_1 = layers[i](x)
+            x = layers[i](x)
+        elif i == 45:
+            x = layers[i]([x_0, x_1])
+            x_0 = layers[i]([x_0, x_1])
+        elif i == 53:
+            x_0 = layers[i](x)
+            x = layers[i](x)
+        elif i == 54:
+            x_1 = layers[i](x_conv)
+            x = layers[i](x_conv)
+        elif i == 55:
+            x = layers[i]([x_0, x_1])
+            x_0 = layers[i]([x_0, x_1])
+        elif i == 63:
+            x_1 = layers[i](x)
+            x = layers[i](x)
+        elif i == 64:
+            x = layers[i]([x_0, x_1])
+            x_0 = layers[i]([x_0, x_1])
+        elif i == 72:
+            x_0 = layers[i](x)
+            x = layers[i](x)
+        elif i == 73:
+            x_1 = layers[i](x_conv)
+            x = layers[i](x_conv)
+        elif i == 74:
+            x = layers[i]([x_0, x_1])
+            x_0 = layers[i]([x_0, x_1])
+        elif i == 82:
+            x_1 = layers[i](x)
+            x = layers[i](x)
+        elif i == 83:
+            x = layers[i]([x_0, x_1])
+            x_0 = layers[i]([x_0, x_1])
+        else:
             x = layers[i](x)
 
-    new_model = Model(input=layers[0].input, output=x)
+
+    new_model = Model(inputs=layers[0].input, outputs=x)
     return new_model
 
 

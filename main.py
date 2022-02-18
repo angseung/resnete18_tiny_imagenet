@@ -14,14 +14,14 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.image import resize
 from models.resnet_e18f import resnet_e18, vgg_e18
 import tensorflow_datasets as tfds
-from utils import TinyImageNet, replace_intermediate_layer
+from utils import TinyImageNet, replace_intermediate_layer_resnet18
 from classification_models.keras import Classifiers
 
 parser = argparse.ArgumentParser(description='resnet model')
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--input_size", type=int, default=64)
 parser.add_argument("--method", type=str, default="bilinear")
-parser.add_argument("--tune", type=bool, default=False)
+parser.add_argument("--tune", type=bool, default=True)
 args = parser.parse_args()
 assert args.method in ["bilinear", "nearest", "bicubic"]
 assert args.input_size in [16, 32, 64]
@@ -36,10 +36,10 @@ ResNet18, preprocess_input = Classifiers.get('resnet18')
 model = ResNet18(input_shape=(input_size, input_size, 3), weights='imagenet', include_top=False)
 
 if args.tune:
-    conv_to_replace = tf.keras.layers.Conv2D(64, 3, strides=(1, 1))
-    pool_to_replace = tf.keras.activations.linear
-    model = replace_intermediate_layer(model, 3, conv_to_replace)
-    model = replace_intermediate_layer(model, 7, pool_to_replace)
+    conv_to_replace = tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2), use_bias=True)
+    # pool_to_replace = tf.keras.activations.linear
+    model_new = replace_intermediate_layer_resnet18(model, 3, conv_to_replace)
+    # model = replace_intermediate_layer(model, 7, pool_to_replace)
     ## replace conv7x7[3] -> conv3x3, maxpool[7]->sequential
     input = tf.keras.Input(shape=(input_size, input_size, 3))
     y = model(input)
