@@ -35,27 +35,51 @@ num_classes = 200
 ResNet18, preprocess_input = Classifiers.get('resnet18')
 model = ResNet18(input_shape=(input_size, input_size, 3), weights='imagenet', include_top=False)
 
-if args.tune:
-    conv_to_replace = tf.keras.layers.Conv2D(64, (7, 7), strides=(2, 2), use_bias=True)
-    # pool_to_replace = tf.keras.activations.linear
-    model_new = replace_intermediate_layer_resnet18(model, 3, conv_to_replace)
-    # model = replace_intermediate_layer(model, 7, pool_to_replace)
-    ## replace conv7x7[3] -> conv3x3, maxpool[7]->sequential
-    input = tf.keras.Input(shape=(input_size, input_size, 3))
-    y = model(input)
-    y = tf.keras.layers.GlobalAvgPool2D()(y)
-    y = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(y)
-    y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
-    model = tf.keras.Model(input, y)
+# input = tf.keras.Input(shape=(input_size, input_size, 3))
+# y = model(input)
+# y = tf.keras.layers.GlobalAvgPool2D()(y)
+# y = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(y)
+# y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
+# model = tf.keras.Model(input, y)
 
-else:
-    input = tf.keras.Input(shape=(input_size, input_size, 3))
-    y = model(input)
-    y = tf.keras.layers.GlobalAvgPool2D()(y)
-    y = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(y)
-    y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
-    # model = tf.keras.Model(input, y)
-    model = keras.models.Model(inputs=[model.input], outputs=[output])
+
+def get_output_of_layer(layer):
+    if layer.name in layer_outputs:
+        return layer_outputs[layer.name]
+
+    if layer.name == starting_layer_name:
+        out = layer(input)
+        layer_outputs[layer.name] = out
+        return out
+
+    prev_layers = []
+    for node in layer._inbound_nodes:
+        try:
+            prev_layers.extend(node.inbound_layers)
+        except:
+            prev_layers.append(node.inbound_layers)
+
+    pl_outs = []
+    for pl in prev_layers:
+        pl_outs.extend([get_output_of_layer(pl)])
+
+    out = layer(pl_outs[0] if len(pl_outs) == 1 else pl_outs)
+    layer_outputs[layer.name] = out
+    return out
+
+
+layer_outputs = {}
+starting_layer_name = 'bn_data'
+input = tf.keras.layers.Input(batch_shape=model.get_layer(starting_layer_name).get_input_shape_at(0))
+output = get_output_of_layer(model.layers[-1])
+output = tf.keras.layers.GlobalAvgPool2D()(output)
+output = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(output)
+output = tf.keras.layers.Activation("softmax", dtype="float32")(output)
+model = tf.keras.Model(input, output)
+
+if args.tune:
+    h5_dir = "resnet_18_20220218-201443"
+    model.load_weights("results/{}/tinyimagenet.h5".format(h5_dir))
 
 # Data Load TinyImageNet
 (train_images, train_labels), (test_images, test_labels) = TinyImageNet(
@@ -72,7 +96,7 @@ if args.input_size != 64:
 # test_images = test_images.reshape((10000, 32, 32, 3)).astype("float32")
 
 # Normalize pixel values to be between -1 and 1
-train_images, test_images = train_images / 127.5 - 1, test_images / 127.5 - 1
+# train_images, test_images = train_images / 127.5 - 1, test_images / 127.5 - 1
 
 # train_labels = tf.keras.utils.to_categorical(train_labels, num_classes)
 # test_labels = tf.keras.utils.to_categorical(test_labels, num_classes)
@@ -127,7 +151,7 @@ model.compile(
 
 trained_model = model.fit(
     datagen.flow(train_images, train_labels, batch_size=64),
-    epochs=200,
+    epochs=100,
     validation_data=(test_images, test_labels),
     shuffle=True,
     callbacks=[tb, mcp_save, lrcb],
