@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description='resnet model')
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--input_size", type=int, default=64)
 parser.add_argument("--method", type=str, default="bilinear")
-parser.add_argument("--tune", type=bool, default=True)
+parser.add_argument("--tune", type=bool, default=False)
 args = parser.parse_args()
 assert args.method in ["bilinear", "nearest", "bicubic"]
 assert args.input_size in [16, 32, 64]
@@ -34,13 +34,6 @@ num_classes = 200
 
 ResNet18, preprocess_input = Classifiers.get('resnet18')
 model = ResNet18(input_shape=(input_size, input_size, 3), weights='imagenet', include_top=False)
-
-# input = tf.keras.Input(shape=(input_size, input_size, 3))
-# y = model(input)
-# y = tf.keras.layers.GlobalAvgPool2D()(y)
-# y = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(y)
-# y = tf.keras.layers.Activation("softmax", dtype="float32")(y)
-# model = tf.keras.Model(input, y)
 
 
 def get_output_of_layer(layer):
@@ -73,13 +66,21 @@ starting_layer_name = 'bn_data'
 input = tf.keras.layers.Input(batch_shape=model.get_layer(starting_layer_name).get_input_shape_at(0))
 output = get_output_of_layer(model.layers[-1])
 output = tf.keras.layers.GlobalAvgPool2D()(output)
-output = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal")(output)
+output = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal", use_bias=False)(output)
 output = tf.keras.layers.Activation("softmax", dtype="float32")(output)
 model = tf.keras.Model(input, output)
 
 if args.tune:
-    h5_dir = "resnet_18_20220218-201443"
+    h5_dir = "resnet_18_20220218-203843"
     model.load_weights("results/{}/tinyimagenet.h5".format(h5_dir))
+    initializer = tf.keras.initializers.GlorotUniform()
+    w_shape = model.layers[3].get_weights()[0].shape
+    values = initializer(shape=w_shape).numpy()
+    model.layers[3].set_weights([values])
+    w_shape = model.layers[87].get_weights()[0].shape
+    values = initializer(shape=w_shape).numpy()
+    model.layers[87].set_weights([values])
+
 
 # Data Load TinyImageNet
 (train_images, train_labels), (test_images, test_labels) = TinyImageNet(
@@ -90,16 +91,8 @@ if args.input_size != 64:
     train_images = tf.image.resize(tf.convert_to_tensor(train_images), size=[args.input_size, args.input_size], method=args.method)
     test_images = tf.image.resize(tf.convert_to_tensor(test_images), size=[args.input_size, args.input_size], method=args.method)
 
-# train_images = preprocess_input(train_images)
-# test_images = preprocess_input(test_images)
-# train_images = train_images.reshape((50000, 32, 32, 3)).astype("float32")
-# test_images = test_images.reshape((10000, 32, 32, 3)).astype("float32")
-
-# Normalize pixel values to be between -1 and 1
-# train_images, test_images = train_images / 127.5 - 1, test_images / 127.5 - 1
-
-# train_labels = tf.keras.utils.to_categorical(train_labels, num_classes)
-# test_labels = tf.keras.utils.to_categorical(test_labels, num_classes)
+train_images = preprocess_input(train_images)
+test_images = preprocess_input(test_images)
 
 # Data augmentation
 datagen = ImageDataGenerator(
