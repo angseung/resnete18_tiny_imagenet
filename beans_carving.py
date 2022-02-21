@@ -44,11 +44,15 @@ resize_size = int(input_size * (256 / 224))
 ).load_data_as_numpy()
 
 if args.bnn:
-    model = resnet_b18_v2((224, 224, 3), 3, None)
+    model = resnet_b18_v2((input_size, input_size, 3), 3, None)
 else:
-    model = resnet_e18((224, 224, 3), 3, None)
+    model = resnet_e18((input_size, input_size, 3), 3, None)
 
 lq.models.summary(model)
+os.mkdir("results/{}".format(test_name))
+with open("results/{}/config.txt".format(test_name), "w") as f:
+    lq.models.summary(model, print_fn=f.write)
+    f.write("\n%s\n" % str(args))
 
 tb = tf.keras.callbacks.TensorBoard(
     log_dir="results/{}/log".format(test_name), histogram_freq=1
@@ -97,3 +101,5 @@ model.load_weights("results/{}/beansimagenet.h5".format(test_name))
 # Model Evaluate!
 test_loss, test_acc = model.evaluate(x=test_data, y=test_label)
 print(f"Test accuracy {test_acc * 100:.2f} %")
+with open("results/{}/config.txt".format(test_name), "a") as f:
+    f.write(f"Test accuracy {test_acc * 100:.2f} %")
