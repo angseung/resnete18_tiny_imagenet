@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import datetime
 import argparse
@@ -15,19 +15,15 @@ from tensorflow.image import resize
 import tensorflow_datasets as tfds
 from utils import TinyImageNet, replace_intermediate_layer_resnet18
 from classification_models.keras import Classifiers
-from models.resnet_e18f import resnet_e18
+from models.resnet_b18f import resnet_b18_v2
 from utils import BeansImageNet
 
 test_name = "beans_resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-CARVING = False
+# traindata, testdata, valdata = BeansImageNet().load_data()
+(train_data, train_label), (test_data, test_label), (val_data, val_label) = BeansImageNet().load_data_as_numpy()
+train_data, test_data, val_data = train_data / 127.5 - 1, test_data / 127.5 - 1, val_data / 127.5 - 1
 
-if CARVING:
-    input_size = 256
-else:
-    input_size = 224
-
-(train_data, train_label), (test_data, test_label), (val_data, val_label) = BeansImageNet(input_size=input_size, norm=True, carving=True).load_data_as_numpy()
-model = resnet_e18((224, 224, 3), 3, None)
+model = resnet_b18_v2((224, 224, 3), 3, None)
 model.summary()
 
 tb = tf.keras.callbacks.TensorBoard(
@@ -49,7 +45,6 @@ def learning_rate_schedule(epoch):
 
 
 lrcb = tf.keras.callbacks.LearningRateScheduler(learning_rate_schedule)
-top5_acc = tf.keras.metrics.TopKCategoricalAccuracy(k=5, name="top5_acc")
 mcp_save = ModelCheckpoint(
     "results/{}/beansimagenet.h5".format(test_name),
     save_best_only=True,
