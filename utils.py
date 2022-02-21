@@ -65,14 +65,21 @@ class BeansImageNet:
         self.input_size = input_size
         self.resize_size = resize_size
         self.norm = norm
+        self.imsize = 500
         self.carving = carving
         self.is_npz_made = (
-            (os.path.isfile(target_dir + "/train_images_sc.npy"))
-            and (os.path.isfile(target_dir + "/train_labels_sc.npy"))
-            and (os.path.isfile(target_dir + "/test_images_sc.npy"))
-            and (os.path.isfile(target_dir + "/test_labels_sc.npy"))
-            and (os.path.isfile(target_dir + "/val_images_sc.npy"))
-            and (os.path.isfile(target_dir + "/val_labels_sc.npy"))
+            (os.path.isfile(target_dir + "/train_images_sc_%d.npy" % self.input_size))
+            and (
+                os.path.isfile(target_dir + "/train_labels_sc_%d.npy" % self.input_size)
+            )
+            and (
+                os.path.isfile(target_dir + "/test_images_sc_%d.npy" % self.input_size)
+            )
+            and (
+                os.path.isfile(target_dir + "/test_labels_sc_%d.npy" % self.input_size)
+            )
+            and (os.path.isfile(target_dir + "/val_images_sc_%d.npy" % self.input_size))
+            and (os.path.isfile(target_dir + "/val_labels_sc_%d.npy" % self.input_size))
         )
 
     # return dataset as tf.data.Dataset class
@@ -83,21 +90,21 @@ class BeansImageNet:
             print("apply carving...")
             traindata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/train",
-                image_size=(self.resize_size, self.resize_size),
+                image_size=(self.imsize, self.imsize),
                 interpolation="bilinear",
                 shuffle=True,
                 label_mode="categorical",
             )
             testdata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/test",
-                image_size=(self.resize_size, self.resize_size),
+                image_size=(self.imsize, self.imsize),
                 interpolation="bilinear",
                 shuffle=False,
                 label_mode="categorical",
             )
             valdata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/validation",
-                image_size=(self.resize_size, self.resize_size),
+                image_size=(self.imsize, self.imsize),
                 interpolation="bilinear",
                 shuffle=False,
                 label_mode="categorical",
@@ -127,15 +134,33 @@ class BeansImageNet:
 
         return (traindata, testdata, valdata)
 
-    def load_data_as_numpy(self) -> Tuple[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]:
+    def load_data_as_numpy(
+        self,
+    ) -> Tuple[
+        Tuple[np.ndarray, np.ndarray],
+        Tuple[np.ndarray, np.ndarray],
+        Tuple[np.ndarray, np.ndarray],
+    ]:
         if self.carving and self.is_npz_made:
             # if carving applied images are saved already...
-            train_data = np.load(self.target_dir + "/train_images_sc.npy")
-            train_label = np.load(self.target_dir + "/train_labels_sc.npy")
-            test_data = np.load(self.target_dir + "/test_images_sc.npy")
-            test_label = np.load(self.target_dir + "/test_labels_sc.npy")
-            val_data = np.load(self.target_dir + "/val_images_sc.npy")
-            val_label = np.load(self.target_dir + "/val_labels_sc.npy")
+            train_data = np.load(
+                self.target_dir + "/train_images_sc_%d.npy" % self.input_size
+            )
+            train_label = np.load(
+                self.target_dir + "/train_labels_sc_%d.npy" % self.input_size
+            )
+            test_data = np.load(
+                self.target_dir + "/test_images_sc_%d.npy" % self.input_size
+            )
+            test_label = np.load(
+                self.target_dir + "/test_labels_sc_%d.npy" % self.input_size
+            )
+            val_data = np.load(
+                self.target_dir + "/val_images_sc_%d.npy" % self.input_size
+            )
+            val_label = np.load(
+                self.target_dir + "/val_labels_sc_%d.npy" % self.input_size
+            )
 
         else:
             traindata, testdata, valdata = self.load_data()
@@ -144,12 +169,16 @@ class BeansImageNet:
                 if self.carving:
                     for j, image in enumerate(images):
                         if j == 0:
-                            sc_image = resize(image, (self.input_size, self.input_size))[np.newaxis, :]
+                            sc_image = resize(
+                                image, (self.resize_size, self.resize_size)
+                            )[np.newaxis, :]
                         else:
                             sc_image = np.concatenate(
                                 (
                                     sc_image,
-                                    resize(image, (self.input_size, self.input_size))[np.newaxis, :],
+                                    resize(image, (self.resize_size, self.resize_size))[
+                                        np.newaxis, :
+                                    ],
                                 )
                             )
                     images = sc_image.copy()
@@ -165,12 +194,16 @@ class BeansImageNet:
                 if self.carving:
                     for j, image in enumerate(images):
                         if j == 0:
-                            sc_image = resize(image, (self.input_size, self.input_size))[np.newaxis, :]
+                            sc_image = resize(
+                                image, (self.resize_size, self.resize_size)
+                            )[np.newaxis, :]
                         else:
                             sc_image = np.concatenate(
                                 (
                                     sc_image,
-                                    resize(image, (self.input_size, self.input_size))[np.newaxis, :],
+                                    resize(image, (self.resize_size, self.resize_size))[
+                                        np.newaxis, :
+                                    ],
                                 )
                             )
                     images = sc_image.copy()
@@ -185,12 +218,16 @@ class BeansImageNet:
                 if self.carving:
                     for j, image in enumerate(images):
                         if j == 0:
-                            sc_image = resize(image, (self.input_size, self.input_size))[np.newaxis, :]
+                            sc_image = resize(
+                                image, (self.resize_size, self.resize_size)
+                            )[np.newaxis, :]
                         else:
                             sc_image = np.concatenate(
                                 (
                                     sc_image,
-                                    resize(image, (self.input_size, self.input_size))[np.newaxis, :],
+                                    resize(image, (self.resize_size, self.resize_size))[
+                                        np.newaxis, :
+                                    ],
                                 )
                             )
                     images = sc_image.copy()
@@ -200,6 +237,11 @@ class BeansImageNet:
                 else:
                     val_data = np.concatenate((val_data, images), axis=0)
                     val_label = np.concatenate((val_label, targets), axis=0)
+
+            croper = tf.keras.layers.CenterCrop(height=self.input_size, width=self.input_size)
+            train_data = croper(train_data).numpy()
+            test_data = croper(test_data).numpy()
+            val_data = croper(val_data).numpy()
 
             if self.norm:
                 train_data, test_data, val_data = (
@@ -212,12 +254,30 @@ class BeansImageNet:
                 os.mkdir(self.target_dir)
 
             if self.carving:
-                np.save(self.target_dir + "/train_images_sc.npy", train_data)
-                np.save(self.target_dir + "/train_labels_sc.npy", train_label)
-                np.save(self.target_dir + "/test_images_sc.npy", test_data)
-                np.save(self.target_dir + "/test_labels_sc.npy", test_label)
-                np.save(self.target_dir + "/val_images_sc.npy", val_data)
-                np.save(self.target_dir + "/val_labels_sc.npy", val_label)
+                np.save(
+                    self.target_dir + "/train_images_sc_%d.npy" % self.input_size,
+                    train_data,
+                )
+                np.save(
+                    self.target_dir + "/train_labels_sc_%d.npy" % self.input_size,
+                    train_label,
+                )
+                np.save(
+                    self.target_dir + "/test_images_sc_%d.npy" % self.input_size,
+                    test_data,
+                )
+                np.save(
+                    self.target_dir + "/test_labels_sc_%d.npy" % self.input_size,
+                    test_label,
+                )
+                np.save(
+                    self.target_dir + "/val_images_sc_%d.npy" % self.input_size,
+                    val_data,
+                )
+                np.save(
+                    self.target_dir + "/val_labels_sc_%d.npy" % self.input_size,
+                    val_label,
+                )
 
         return (train_data, train_label), (test_data, test_label), (val_data, val_label)
 

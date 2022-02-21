@@ -16,29 +16,51 @@ import tensorflow_datasets as tfds
 from utils import TinyImageNet, replace_intermediate_layer_resnet18
 from classification_models.keras import Classifiers
 from models.resnet_e18f import resnet_e18
+from models.resnet_b18f import resnet_b18_v2
 from utils import BeansImageNet
 
 test_name = "beans_resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-CARVING = True
 
-if CARVING:
-    input_size = 256
-else:
-    input_size = 224
+parser = argparse.ArgumentParser(description="resnet model")
+parser.add_argument("--lr", type=float, default=0.001)
+parser.add_argument("--input_size", type=int, default=224)
+parser.add_argument("--carving", type=bool, default=True)
+parser.add_argument("--bnn", type=bool, default=False)
+parser.add_argument("--epoch", type=int, default=50)
+parser.add_argument("--batch_size", type=int, default=32)
+parser.add_argument("--seed", type=bool, default=True)
+
+args = parser.parse_args()
+
+if args.seed:
+    seed = 1
+    tf.random.set_seed(seed)
+    np.random.seed(seed)
+
+input_size = args.input_size
+if args.carving:
+    resize_size = int(input_size * (256 / 224))
 
 (
     (train_data, train_label),
     (test_data, test_label),
     (val_data, val_label),
-) = BeansImageNet(input_size=input_size, norm=True, carving=CARVING).load_data_as_numpy()
-model = resnet_e18((224, 224, 3), 3, None)
-model.summary()
+) = BeansImageNet(
+    input_size=input_size, norm=True, carving=args.carving
+).load_data_as_numpy()
+
+if args.bnn:
+    model = resnet_b18_v2((224, 224, 3), 3, None)
+else:
+    model = resnet_e18((224, 224, 3), 3, None)
+
+lq.models.summary(model)
 
 tb = tf.keras.callbacks.TensorBoard(
     log_dir="results/{}/log".format(test_name), histogram_freq=1
 )
 
-learning_rate = 0.001
+learning_rate = args.lr
 learning_factor = 0.3
 learning_steps = [40, 80, 100]
 
@@ -71,10 +93,10 @@ model.compile(
 trained_model = model.fit(
     x=train_data,
     y=train_label,
-    epochs=50,
+    epochs=args.epoch,
     validation_data=(val_data, val_label),
     shuffle=True,
-    batch_size=64,
+    batch_size=args.batch_size,
     callbacks=[tb, mcp_save, lrcb],
 )
 
