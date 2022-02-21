@@ -58,6 +58,7 @@ class BeansImageNet:
         resize_size: int = 256,
         norm: bool = True,
         carving: bool = False,
+        interpolation: str = "bilinear",
     ) -> None:
         self.base_dir = base_dir
         self.target_dir = target_dir
@@ -67,6 +68,7 @@ class BeansImageNet:
         self.norm = norm
         self.imsize = 500
         self.carving = carving
+        self.interpolation = interpolation
         self.is_npz_made = (
             (os.path.isfile(target_dir + "/train_images_sc_%d.npy" % self.input_size))
             and (
@@ -91,21 +93,21 @@ class BeansImageNet:
             traindata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/train",
                 image_size=(self.imsize, self.imsize),
-                interpolation="bilinear",
+                interpolation=self.interpolation,
                 shuffle=True,
                 label_mode="categorical",
             )
             testdata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/test",
                 image_size=(self.imsize, self.imsize),
-                interpolation="bilinear",
+                interpolation=self.interpolation,
                 shuffle=False,
                 label_mode="categorical",
             )
             valdata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/validation",
                 image_size=(self.imsize, self.imsize),
-                interpolation="bilinear",
+                interpolation=self.interpolation,
                 shuffle=False,
                 label_mode="categorical",
             )
@@ -113,21 +115,21 @@ class BeansImageNet:
             traindata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/train",
                 image_size=(self.input_size, self.input_size),
-                interpolation="bilinear",
+                interpolation=self.interpolation,
                 shuffle=True,
                 label_mode="categorical",
             )
             testdata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/test",
                 image_size=(self.input_size, self.input_size),
-                interpolation="bilinear",
+                interpolation=self.interpolation,
                 shuffle=False,
                 label_mode="categorical",
             )
             valdata = tf.keras.utils.image_dataset_from_directory(
                 self.base_dir + "/validation",
                 image_size=(self.input_size, self.input_size),
-                interpolation="bilinear",
+                interpolation=self.interpolation,
                 shuffle=False,
                 label_mode="categorical",
             )

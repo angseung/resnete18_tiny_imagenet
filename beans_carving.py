@@ -5,16 +5,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import datetime
 import argparse
 import numpy as np
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import tensorflow as tf
 import larq as lq
-import larq_zoo
-from tensorflow.python.keras.callbacks import TensorBoard
 from tensorflow.python.keras.callbacks import ModelCheckpoint
-from tensorflow.image import resize
-import tensorflow_datasets as tfds
-from utils import TinyImageNet, replace_intermediate_layer_resnet18
-from classification_models.keras import Classifiers
 from models.resnet_e18f import resnet_e18
 from models.resnet_b18f import resnet_b18_v2
 from utils import BeansImageNet
@@ -24,13 +17,15 @@ test_name = "beans_resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M
 parser = argparse.ArgumentParser(description="resnet model")
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--input_size", type=int, default=224)
-parser.add_argument("--carving", type=bool, default=True)
+parser.add_argument("--carving", type=bool, default=False)
 parser.add_argument("--bnn", type=bool, default=False)
 parser.add_argument("--epoch", type=int, default=50)
-parser.add_argument("--batch_size", type=int, default=32)
+parser.add_argument("--batch_size", type=int, default=64)
+parser.add_argument("--interpolation", type=str, default="bilinear") # [bilinear, nearest, bicubic]
 parser.add_argument("--seed", type=bool, default=True)
 
 args = parser.parse_args()
+print(args)
 
 if args.seed:
     seed = 1
@@ -38,15 +33,14 @@ if args.seed:
     np.random.seed(seed)
 
 input_size = args.input_size
-if args.carving:
-    resize_size = int(input_size * (256 / 224))
+resize_size = int(input_size * (256 / 224))
 
 (
     (train_data, train_label),
     (test_data, test_label),
     (val_data, val_label),
 ) = BeansImageNet(
-    input_size=input_size, norm=True, carving=args.carving
+    input_size=input_size, resize_size=resize_size, norm=True, carving=args.carving, interpolation=args.interpolation,
 ).load_data_as_numpy()
 
 if args.bnn:
@@ -75,7 +69,6 @@ def learning_rate_schedule(epoch):
 
 
 lrcb = tf.keras.callbacks.LearningRateScheduler(learning_rate_schedule)
-top5_acc = tf.keras.metrics.TopKCategoricalAccuracy(k=5, name="top5_acc")
 mcp_save = ModelCheckpoint(
     "results/{}/beansimagenet.h5".format(test_name),
     save_best_only=True,
@@ -84,7 +77,6 @@ mcp_save = ModelCheckpoint(
 )
 
 model.compile(
-    # tf.keras.optimizers.Adam(learning_rate=learning_rate, decay=0.0001),
     tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.9),
     loss="categorical_crossentropy",
     metrics=["accuracy"],
