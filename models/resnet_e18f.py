@@ -41,14 +41,15 @@ def residual_block_e18(x: tf.Tensor, filters: int, strides: int = 1) -> tf.Tenso
     else:
         residual = x
 
-    x = lq.layers.QuantConv2D(
+    # x = lq.layers.QuantConv2D(
+    x = tf.keras.layers.Conv2D(
         filters,
         kernel_size=3,
         strides=strides,
         padding="same",
-        input_quantizer=input_quantizer,
-        kernel_quantizer=kernel_quantizer,
-        kernel_constraint=kernel_constraint,
+        # input_quantizer=input_quantizer,
+        # kernel_quantizer=kernel_quantizer,
+        # kernel_constraint=kernel_constraint,
         kernel_initializer="glorot_normal",
         use_bias=False,
     )(x)

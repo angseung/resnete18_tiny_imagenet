@@ -47,6 +47,27 @@ class TinyImageNet:
         return (train_images, train_labels), (test_images, test_labels)
 
 
+class BeansImageNet:
+    def __init__(
+        self,
+        base_dir: str = "C:/beans",
+        target_dir: str = "./data_beans",
+        input_size: int = 224,
+    ) -> None:
+        self.base_dir = base_dir
+        self.target_dir = target_dir
+        self.num_classes = 3
+        self.input_size = input_size
+
+    def load_data(
+        self,
+    ) -> Tuple[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]:
+        traindata = tf.keras.utils.image_dataset_from_directory(self.base_dir + "/train", image_size=(self.input_size, self.input_size), interpolation='bilinear', shuffle=True)
+        testdata = tf.keras.utils.image_dataset_from_directory(self.base_dir + "/test", image_size=(self.input_size, self.input_size), interpolation='bilinear', shuffle=False)
+
+        return (traindata, testdata)
+
+
 def get_id_dictionary(path):
     id_dict = {}
     for i, line in enumerate(open(path + "/wnids.txt", "r")):

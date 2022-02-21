@@ -12,10 +12,10 @@ import larq_zoo
 from tensorflow.python.keras.callbacks import TensorBoard
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.image import resize
-from models.resnet_e18f import resnet_e18, vgg_e18
 import tensorflow_datasets as tfds
 from utils import TinyImageNet, replace_intermediate_layer_resnet18
 from classification_models.keras import Classifiers
+from models.resnet_e18f import resnet_e18
 
 parser = argparse.ArgumentParser(description='resnet model')
 parser.add_argument("--lr", type=float, default=0.001)
@@ -33,7 +33,8 @@ test_name = "resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 num_classes = 200
 
 ResNet18, preprocess_input = Classifiers.get('resnet18')
-model = ResNet18(input_shape=(input_size, input_size, 3), weights='imagenet', include_top=False)
+# model = ResNet18(input_shape=(input_size, input_size, 3), weights='imagenet', include_top=False)
+model = ResNet18(input_shape=(input_size, input_size, 3), weights=None, include_top=False)
 
 
 def get_output_of_layer(layer):
@@ -66,7 +67,7 @@ starting_layer_name = 'bn_data'
 input = tf.keras.layers.Input(batch_shape=model.get_layer(starting_layer_name).get_input_shape_at(0))
 output = get_output_of_layer(model.layers[-1])
 output = tf.keras.layers.GlobalAvgPool2D()(output)
-output = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal", use_bias=False)(output)
+output = tf.keras.layers.Dense(num_classes, kernel_initializer="glorot_normal", use_bias=False, kernel_regularizer='l2')(output)
 output = tf.keras.layers.Activation("softmax", dtype="float32")(output)
 model = tf.keras.Model(input, output)
 
