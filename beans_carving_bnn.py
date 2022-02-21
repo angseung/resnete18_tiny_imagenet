@@ -20,8 +20,16 @@ from utils import BeansImageNet
 
 test_name = "beans_resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 # traindata, testdata, valdata = BeansImageNet().load_data()
-(train_data, train_label), (test_data, test_label), (val_data, val_label) = BeansImageNet().load_data_as_numpy()
-train_data, test_data, val_data = train_data / 127.5 - 1, test_data / 127.5 - 1, val_data / 127.5 - 1
+(
+    (train_data, train_label),
+    (test_data, test_label),
+    (val_data, val_label),
+) = BeansImageNet().load_data_as_numpy()
+train_data, test_data, val_data = (
+    train_data / 127.5 - 1,
+    test_data / 127.5 - 1,
+    val_data / 127.5 - 1,
+)
 
 model = resnet_b18_v2((224, 224, 3), 3, None)
 model.summary()

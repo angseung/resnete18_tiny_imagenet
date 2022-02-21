@@ -19,14 +19,18 @@ from models.resnet_e18f import resnet_e18
 from utils import BeansImageNet
 
 test_name = "beans_resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-CARVING = False
+CARVING = True
 
 if CARVING:
     input_size = 256
 else:
     input_size = 224
 
-(train_data, train_label), (test_data, test_label), (val_data, val_label) = BeansImageNet(input_size=input_size, norm=True, carving=True).load_data_as_numpy()
+(
+    (train_data, train_label),
+    (test_data, test_label),
+    (val_data, val_label),
+) = BeansImageNet(input_size=input_size, norm=True, carving=CARVING).load_data_as_numpy()
 model = resnet_e18((224, 224, 3), 3, None)
 model.summary()
 

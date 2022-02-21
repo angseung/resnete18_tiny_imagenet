@@ -12,16 +12,20 @@ target_dir = "./data"
 test_name = "resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 num_classes = 200
 
-ResNet18, preprocess_input = Classifiers.get('resnet18')
-resnet = ResNet18(input_shape=(64, 64, 3), weights='imagenet', include_top=False)
+ResNet18, preprocess_input = Classifiers.get("resnet18")
+resnet = ResNet18(input_shape=(64, 64, 3), weights="imagenet", include_top=False)
 
 # resnet = ResNet50()
 lq.models.summary(resnet)
 
-starting_layer_name = 'data'
-new_input = tf.keras.layers.Input(batch_shape=resnet.get_layer(starting_layer_name).get_input_shape_at(0))
+starting_layer_name = "data"
+new_input = tf.keras.layers.Input(
+    batch_shape=resnet.get_layer(starting_layer_name).get_input_shape_at(0)
+)
 
 layer_outputs = {}
+
+
 def get_output_of_layer(layer):
     if layer.name in layer_outputs:
         return layer_outputs[layer.name]

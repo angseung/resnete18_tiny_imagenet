@@ -75,23 +75,61 @@ class BeansImageNet:
             and (os.path.isfile(target_dir + "/val_labels_sc.npy"))
         )
 
+    # return dataset as tf.data.Dataset class
     def load_data(
         self,
     ) -> Tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
         if self.carving:
             print("apply carving...")
-            traindata = tf.keras.utils.image_dataset_from_directory(self.base_dir + "/train", image_size=(self.resize_size, self.resize_size), interpolation='bilinear', shuffle=True, label_mode='categorical')
-            testdata = tf.keras.utils.image_dataset_from_directory(self.base_dir + "/test", image_size=(self.resize_size, self.resize_size), interpolation='bilinear', shuffle=False, label_mode='categorical')
-            valdata = tf.keras.utils.image_dataset_from_directory(self.base_dir + "/validation", image_size=(self.resize_size, self.resize_size), interpolation='bilinear', shuffle=False, label_mode='categorical')
+            traindata = tf.keras.utils.image_dataset_from_directory(
+                self.base_dir + "/train",
+                image_size=(self.resize_size, self.resize_size),
+                interpolation="bilinear",
+                shuffle=True,
+                label_mode="categorical",
+            )
+            testdata = tf.keras.utils.image_dataset_from_directory(
+                self.base_dir + "/test",
+                image_size=(self.resize_size, self.resize_size),
+                interpolation="bilinear",
+                shuffle=False,
+                label_mode="categorical",
+            )
+            valdata = tf.keras.utils.image_dataset_from_directory(
+                self.base_dir + "/validation",
+                image_size=(self.resize_size, self.resize_size),
+                interpolation="bilinear",
+                shuffle=False,
+                label_mode="categorical",
+            )
         else:
-            traindata = tf.keras.utils.image_dataset_from_directory(self.base_dir + "/train", image_size=(self.input_size, self.input_size), interpolation='bilinear', shuffle=True, label_mode='categorical')
-            testdata = tf.keras.utils.image_dataset_from_directory(self.base_dir + "/test", image_size=(self.input_size, self.input_size), interpolation='bilinear', shuffle=False, label_mode='categorical')
-            valdata = tf.keras.utils.image_dataset_from_directory(self.base_dir + "/validation", image_size=(self.input_size, self.input_size), interpolation='bilinear', shuffle=False, label_mode='categorical')
+            traindata = tf.keras.utils.image_dataset_from_directory(
+                self.base_dir + "/train",
+                image_size=(self.input_size, self.input_size),
+                interpolation="bilinear",
+                shuffle=True,
+                label_mode="categorical",
+            )
+            testdata = tf.keras.utils.image_dataset_from_directory(
+                self.base_dir + "/test",
+                image_size=(self.input_size, self.input_size),
+                interpolation="bilinear",
+                shuffle=False,
+                label_mode="categorical",
+            )
+            valdata = tf.keras.utils.image_dataset_from_directory(
+                self.base_dir + "/validation",
+                image_size=(self.input_size, self.input_size),
+                interpolation="bilinear",
+                shuffle=False,
+                label_mode="categorical",
+            )
 
         return (traindata, testdata, valdata)
 
-    def load_data_as_numpy(self):
+    def load_data_as_numpy(self) -> Tuple[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]:
         if self.carving and self.is_npz_made:
+            # if carving applied images are saved already...
             train_data = np.load(self.target_dir + "/train_images_sc.npy")
             train_label = np.load(self.target_dir + "/train_labels_sc.npy")
             test_data = np.load(self.target_dir + "/test_images_sc.npy")
@@ -106,50 +144,69 @@ class BeansImageNet:
                 if self.carving:
                     for j, image in enumerate(images):
                         if j == 0:
-                            sc_image = resize(image, (self.input_size, self.input_size))
+                            sc_image = resize(image, (self.input_size, self.input_size))[np.newaxis, :]
                         else:
-                            sc_image = np.concatenate((sc_image, resize(image, (self.input_size, self.input_size))))
+                            sc_image = np.concatenate(
+                                (
+                                    sc_image,
+                                    resize(image, (self.input_size, self.input_size))[np.newaxis, :],
+                                )
+                            )
                     images = sc_image.copy()
 
                 if i == 0:
                     train_data = images
                     train_label = targets
                 else:
-                    train_data = np.concatenate((train_data, images), axis = 0)
-                    train_label = np.concatenate((train_label, targets), axis = 0)
+                    train_data = np.concatenate((train_data, images), axis=0)
+                    train_label = np.concatenate((train_label, targets), axis=0)
 
             for i, (images, targets) in enumerate(tqdm(testdata.as_numpy_iterator())):
                 if self.carving:
                     for j, image in enumerate(images):
                         if j == 0:
-                            sc_image = resize(image, (self.input_size, self.input_size))
+                            sc_image = resize(image, (self.input_size, self.input_size))[np.newaxis, :]
                         else:
-                            sc_image = np.concatenate((sc_image, resize(image, (self.input_size, self.input_size))))
+                            sc_image = np.concatenate(
+                                (
+                                    sc_image,
+                                    resize(image, (self.input_size, self.input_size))[np.newaxis, :],
+                                )
+                            )
                     images = sc_image.copy()
                 if i == 0:
                     test_data = images
                     test_label = targets
                 else:
-                    test_data = np.concatenate((test_data, images), axis = 0)
-                    test_label = np.concatenate((test_label, targets), axis = 0)
+                    test_data = np.concatenate((test_data, images), axis=0)
+                    test_label = np.concatenate((test_label, targets), axis=0)
 
             for i, (images, targets) in enumerate(tqdm(valdata.as_numpy_iterator())):
                 if self.carving:
                     for j, image in enumerate(images):
                         if j == 0:
-                            sc_image = resize(image, (self.input_size, self.input_size))
+                            sc_image = resize(image, (self.input_size, self.input_size))[np.newaxis, :]
                         else:
-                            sc_image = np.concatenate((sc_image, resize(image, (self.input_size, self.input_size))))
+                            sc_image = np.concatenate(
+                                (
+                                    sc_image,
+                                    resize(image, (self.input_size, self.input_size))[np.newaxis, :],
+                                )
+                            )
                     images = sc_image.copy()
                 if i == 0:
                     val_data = images
                     val_label = targets
                 else:
-                    val_data = np.concatenate((val_data, images), axis = 0)
-                    val_label = np.concatenate((val_label, targets), axis = 0)
+                    val_data = np.concatenate((val_data, images), axis=0)
+                    val_label = np.concatenate((val_label, targets), axis=0)
 
             if self.norm:
-                train_data, test_data, val_data = train_data / 127.5 - 1, test_data / 127.5 - 1, val_data / 127.5 - 1
+                train_data, test_data, val_data = (
+                    train_data / 127.5 - 1,
+                    test_data / 127.5 - 1,
+                    val_data / 127.5 - 1,
+                )
 
             if not os.path.isdir(self.target_dir):
                 os.mkdir(self.target_dir)
@@ -315,7 +372,6 @@ def replace_intermediate_layer_resnet18(model, layer_id, new_layer):
             x_0 = layers[i]([x_0, x_1])
         else:
             x = layers[i](x)
-
 
     new_model = Model(inputs=layers[0].input, outputs=x)
     return new_model
