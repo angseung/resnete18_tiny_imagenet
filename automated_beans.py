@@ -17,27 +17,31 @@ parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--input_size", type=int, default=224)
 parser.add_argument("--carving", type=bool, default=False)
 parser.add_argument("--bnn", type=bool, default=False)
-parser.add_argument("--epoch", type=int, default=50)
+parser.add_argument("--epoch", type=int, default=200)
 parser.add_argument("--batch_size", type=int, default=64)
 parser.add_argument("--interpolation", type=str, default="bilinear") # [bilinear, nearest, bicubic]
 parser.add_argument("--seed", type=bool, default=True)
 
 args = parser.parse_args()
-print(args)
+# print(args)
 
 if args.seed:
-    seed = 1
+    seed = 10
     tf.random.set_seed(seed)
     np.random.seed(seed)
 
-input_size_list = [224, 160, 128]
+# input_size_list = [224, 160, 128, 64]
+input_size_list = [160]
 interpolation_list = [
-    "bilinear",
-    "nearest",
-    "bicubic",
+    # "bilinear",
+    # "nearest",
+    # "bicubic",
     "seam-carving"
 ]
-bin_opt = [True, False]
+bin_opt = [
+    True,
+    # False,
+           ]
 
 for is_bnn in bin_opt:
     for input_size in input_size_list:
@@ -45,7 +49,7 @@ for is_bnn in bin_opt:
             test_name = "auto_beans_resnet_18_%s" % datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
             if interpolation == "seam-carving":
-                args.carve = True
+                args.carving = True
                 args.interpolation = "bilinear"
 
             elif interpolation in [
@@ -53,7 +57,7 @@ for is_bnn in bin_opt:
                 "nearest",
                 "bicubic"
             ]:
-                args.carve = False
+                args.carving = False
                 args.interpolation = interpolation
 
             args.input_size = input_size
@@ -61,6 +65,7 @@ for is_bnn in bin_opt:
 
             input_size = args.input_size
             resize_size = int(input_size * (256 / 224))
+            print(args)
 
             (
                 (train_data, train_label),
@@ -121,12 +126,18 @@ for is_bnn in bin_opt:
                 shuffle=True,
                 batch_size=args.batch_size,
                 callbacks=[tb, mcp_save, lrcb],
+                verbose=1,
             )
 
             model.load_weights("results/{}/beansimagenet.h5".format(test_name))
 
             # Model Evaluate!
+            print(args)
             test_loss, test_acc = model.evaluate(x=test_data, y=test_label)
             print(f"Test accuracy {test_acc * 100:.2f} %")
             with open("results/{}/config.txt".format(test_name), "a") as f:
                 f.write(f"Test accuracy {test_acc * 100:.2f} %")
+
+            with open("./results_auto.txt", "a") as f:
+                f.write("%s\n" % str(args))
+                f.write(f"Test accuracy {test_acc * 100:.2f} %\n")
