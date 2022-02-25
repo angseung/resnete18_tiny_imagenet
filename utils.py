@@ -94,7 +94,7 @@ class BeansImageNet:
                 self.base_dir + "/train",
                 image_size=(self.imsize, self.imsize),
                 interpolation=self.interpolation,
-                shuffle=True,
+                shuffle=False,
                 label_mode="categorical",
             )
             testdata = tf.keras.utils.image_dataset_from_directory(
@@ -116,7 +116,7 @@ class BeansImageNet:
                 self.base_dir + "/train",
                 image_size=(self.input_size, self.input_size),
                 interpolation=self.interpolation,
-                shuffle=True,
+                shuffle=False,
                 label_mode="categorical",
             )
             testdata = tf.keras.utils.image_dataset_from_directory(

@@ -43,6 +43,7 @@ resize_size = int(input_size * (256 / 224))
     input_size=input_size, resize_size=resize_size, norm=True, carving=args.carving, interpolation=args.interpolation,
 ).load_data_as_numpy()
 
+
 if args.bnn:
     model = resnet_b18_v2((input_size, input_size, 3), 3, None)
 else:
