@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 import larq as lq
 from tensorflow.python.keras.callbacks import ModelCheckpoint
-from models.resnet_e18f import resnet_e18
+from models.resnet_18 import resnet_18
 from models.resnet_b18f import resnet_b18_v2
 from utils import BeansImageNet
 
@@ -47,7 +47,7 @@ resize_size = int(input_size * (256 / 224))
 if args.bnn:
     model = resnet_b18_v2((input_size, input_size, 3), 3, None)
 else:
-    model = resnet_e18((input_size, input_size, 3), 3, None)
+    model = resnet_18((input_size, input_size, 3), 3, None)
 
 lq.models.summary(model)
 os.mkdir("results/{}".format(test_name))

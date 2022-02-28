@@ -15,7 +15,7 @@ from tensorflow.image import resize
 import tensorflow_datasets as tfds
 from utils import TinyImageNet, replace_intermediate_layer_resnet18
 from classification_models.keras import Classifiers
-from models.resnet_e18f import resnet_e18
+from models.resnet_18 import resnet_18
 
 parser = argparse.ArgumentParser(description="resnet model")
 parser.add_argument("--lr", type=float, default=0.001)

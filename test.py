@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from PIL import Image
 import tensorflow as tf
-from models.resnet_e18f import resnet_e18
+from models.resnet_18 import resnet_18
 from models.resnet_b18f import resnet_b18_v2
 from utils import BeansImageNet
 
@@ -36,7 +36,7 @@ for input_size in input_size_list:
         model = resnet_b18_v2((input_size, input_size, 3), 3, None)
         model.load_weights("./results_bnn/%s/beansimagenet.h5" % test_name)
     else:
-        model = resnet_e18((input_size, input_size, 3), 3, None)
+        model = resnet_18((input_size, input_size, 3), 3, None)
         dirlist = os.listdir("./result")
 
     model.compile(
