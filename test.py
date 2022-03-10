@@ -34,7 +34,7 @@ for input_size in input_size_list:
 
     if bnn_opt:
         model = resnet_b18_v2((input_size, input_size, 3), 3, None)
-        model.load_weights("./results_bnn/%s/beansimagenet.h5" % test_name)
+        model.load_weights("./results/%s/beansimagenet.h5" % test_name)
     else:
         model = resnet_18((input_size, input_size, 3), 3, None)
         dirlist = os.listdir("./result")
@@ -107,5 +107,5 @@ for input_size in input_size_list:
     plt.plot(max_index, max_acc, "k*")
     plt.xlim([-0.2, 3.2])
     plt.ylabel("Test Acc(%)")
-    plt.title("Test with weighted-joint resized images")
+    plt.title("Test with weighted-decoupled images")
     plt.show()
